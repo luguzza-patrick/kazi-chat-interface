@@ -109,10 +109,9 @@ export function KaziChat() {
   }, []);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({
-      top: scrollRef.current.scrollHeight,
-      behavior: "smooth",
-    });
+    const el = scrollRef.current;
+    if (!el || typeof el.scrollTo !== "function") return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messages, loading]);
 
   const persistUrl = (url: string) => {
