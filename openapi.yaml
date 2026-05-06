@@ -1,0 +1,55 @@
+openapi: 3.0.0
+info:
+  title: Kazi Chat API
+  description: API for Kazi, an AI HR assistant that helps with policies, payroll, leave, and more.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+paths:
+  /chat:
+    post:
+      summary: Send a message to Kazi
+      description: Sends a user message and the user ID to the Kazi assistant and returns a response.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatRequest'
+      responses:
+        '200':
+          description: Successful response from Kazi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatResponse'
+        '400':
+          description: Bad Request - Invalid input
+        '500':
+          description: Internal Server Error - Something went wrong on the server
+components:
+  schemas:
+    ChatRequest:
+      type: object
+      required:
+        - user_id
+        - message
+      properties:
+        user_id:
+          type: string
+          description: The unique identifier of the user (e.g., employee_1, hr_1).
+          example: employee_1
+        message:
+          type: string
+          description: The message text sent by the user.
+          example: How many leave days do I have left?
+    ChatResponse:
+      type: object
+      required:
+        - response
+      properties:
+        response:
+          type: string
+          description: The assistant's reply to the user's message.
+          example: You have 12 leave days remaining for the current year.

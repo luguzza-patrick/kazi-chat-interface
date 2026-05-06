@@ -10,3 +10,18 @@ Useful Commands
 
     # Run Python files
     uv run python <PYTHON-FILE>
+
+
+Dependencies you may need 
+
+    fastapi
+    uvicorn
+    sqlalchemy
+    psycopg2-binary
+    pydantic
+    networkx
+    faiss-cpu
+    sentence-transformers
+    python-dotenv
+    pytest
+    httpx
