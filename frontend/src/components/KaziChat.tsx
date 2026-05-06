@@ -33,15 +33,16 @@ export interface KaziUser {
 }
 
 export const KAZI_USERS: KaziUser[] = [
-  { id: "employee_1", name: "Employee 1", role: "Employee" },
-  { id: "employee_2", name: "Employee 2", role: "Employee" },
-  { id: "hr_1", name: "HR", role: "HR" },
-  { id: "ceo_1", name: "CEO", role: "CEO" },
+  { id: "1", name: "Alice Johnson", role: "Employee" },
+  { id: "2", name: "Bob Smith", role: "Employee" },
+  { id: "3", name: "Charlie Brown", role: "Employee" },
+  { id: "4", name: "David HR", role: "HR" },
+  { id: "5", name: "Eve CEO", role: "CEO" },
 ];
 
 const DEFAULT_BACKEND_URL =
   (import.meta.env.VITE_KAZI_BACKEND_URL as string | undefined) ??
-  "http://localhost:8000/chat";
+  "http://localhost:8000/api/v1/chat";
 
 const STORAGE_KEY = "kazi:backend-url";
 

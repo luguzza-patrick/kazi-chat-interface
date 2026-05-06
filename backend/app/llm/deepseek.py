@@ -4,14 +4,18 @@ from app.core.config import settings
 
 class DeepSeekProvider(LLMProvider):
     async def generate_response(self, system_prompt: str, user_prompt: str) -> str:
-        if not settings.DEEPSEEK_API_KEY:
+        api_key = settings.DEEPSEEK_API_KEY
+        if api_key:
+            api_key = api_key.strip("'\"")
+            
+        if not api_key or api_key == "your_key_here":
             # Mock response for development if no API key is provided
             return f"Mock Response: I am Kazi, your HR assistant. System Prompt: {system_prompt} User Prompt: {user_prompt}"
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 f"{settings.DEEPSEEK_BASE_URL}/chat/completions",
-                headers={"Authorization": f"Bearer {settings.DEEPSEEK_API_KEY}"},
+                headers={"Authorization": f"Bearer {api_key}"},
                 json={
                     "model": "deepseek-chat",
                     "messages": [

@@ -32,16 +32,22 @@ Kazi is a production-structured HR AI agent built with FastAPI, PostgreSQL, and 
 
 3. **Initialize Database and RAG**
    ```bash
-   uv run python scripts/seed_db.py
-   uv run python scripts/ingest_data.py
+   make seed
+   make ingest
    ```
 
 4. **Run the Server**
    ```bash
-   uv run uvicorn app.main:app --reload
+   make run
    ```
 
-## API Usage
+## Makefile Commands
+- `make setup`: Install dependencies.
+- `make run`: Start the FastAPI server.
+- `make seed`: Seed the database with dummy data.
+- `make ingest`: Ingest PDF/TXT policies into FAISS.
+- `make test`: Run pytest suite.
+- `make clean`: Remove database and index files.
 - **Endpoint**: `POST /api/v1/chat`
 - **Payload**:
   ```json
