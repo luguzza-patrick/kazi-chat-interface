@@ -9,8 +9,8 @@ function mockFetchOnce(body: unknown, ok = true, status = 200) {
     status,
     json: async () => body,
   } as Response);
-  // @ts-expect-error override global fetch
-  globalThis.fetch = fn;
+  (globalThis as unknown as { fetch: typeof fetch }).fetch =
+    fn as unknown as typeof fetch;
   return fn;
 }
 
@@ -91,8 +91,9 @@ describe("<KaziChat />", () => {
   });
 
   it("renders an error message when the request fails", async () => {
-    // @ts-expect-error override global fetch
-    globalThis.fetch = vi.fn().mockRejectedValue(new Error("Network down"));
+    (globalThis as unknown as { fetch: typeof fetch }).fetch = vi
+      .fn()
+      .mockRejectedValue(new Error("Network down")) as unknown as typeof fetch;
     const user = userEvent.setup();
     render(<KaziChat />);
 
