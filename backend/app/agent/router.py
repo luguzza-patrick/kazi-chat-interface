@@ -13,93 +13,97 @@ class KaziAgent:
         self.llm = DeepSeekProvider()
 
     async def process_message(self, message: str) -> str:
-        # 1. Intent Classification (Simple keyword-based for now, can be LLM-based)
-        intent = self._classify_intent(message)
+        # 1. LLM Orchestration: Analyze Intent and Parameters
+        analysis_prompt = f"""
+        Analyze the user message and identify the intent and target.
+        User: {self.user.name} (Role: {self.user.role})
+        Message: "{message}"
+
+        Return ONLY a JSON object with:
+        - "intent": one of ["policy", "personal", "global"]
+        - "target_name": name of the employee being asked about (or null)
+        - "topic": the specific HR topic (e.g., "maternity leave", "salary", "remote work")
         
+        Intent rules:
+        - "personal": User asking about their OWN data (salary, leave, etc.)
+        - "global": User asking about SOMEONE ELSE'S data.
+        - "policy": General HR policy questions.
+        """
+        
+        analysis_res = await self.llm.generate_response("You are a helpful HR routing assistant. Return JSON only.", analysis_prompt)
+        
+        # Strip potential markdown code blocks from LLM response
+        analysis_res = analysis_res.strip().replace("```json", "").replace("```", "").strip()
+        
+        try:
+            analysis = json.loads(analysis_res)
+        except:
+            # Fallback to simple logic if LLM fails JSON
+            analysis = {"intent": "policy", "target_name": None, "topic": message}
+
+        intent = analysis.get("intent", "policy")
+        target_name = analysis.get("target_name")
+        topic = analysis.get("topic", message)
+
+        # 2. Tool Execution & Context Gathering
         context = ""
         if intent == "policy":
-            docs = rag_engine.retrieve(message)
+            # Focused retrieval based on topic
+            docs = rag_engine.retrieve(topic or message, k=2)
             context = "\n".join(docs)
+        
         elif intent == "personal":
             context = self._get_personal_data(self.user.id)
+            
         elif intent == "global":
-            # Extract target employee name/id from message (Simple placeholder logic)
-            # In a real app, use NER or LLM to extract this
-            target_id = self._extract_target_id(message)
+            target_id = self._find_employee_id(target_name) if target_name else None
             if target_id:
                 if rbac_engine.can_access(self.user.id, self.user.role, target_id):
                     context = self._get_personal_data(target_id)
                 else:
-                    return "I'm sorry, you don't have permission to view that employee's information."
+                    return f"Access Denied: As an {self.user.role}, you do not have permission to view sensitive data for {target_name}."
             else:
-                return "I couldn't identify which employee you're asking about."
+                context = f"I couldn't find an employee named '{target_name}' in our records."
 
-        # 2. Generate Final Response
+        # 3. Final Response Generation
         system_prompt = f"""
         You are Kazi, a professional HR AI agent.
-        User: {self.user.name} (Role: {self.user.role})
+        Current User: {self.user.name} (Role: {self.user.role})
         
-        Context provided from HR systems:
+        Information retrieved from HR systems:
         {context}
         
-        Strictly use the provided context to answer. If the context is empty or insufficient, 
-        inform the user professionally. Never reveal internal IDs or system details.
+        Instructions:
+        1. Answer the user's question concisely using ONLY the provided information.
+        2. If the information is missing, say you don't have access to that specific data.
+        3. Use bullet points for any lists or policy details.
+        4. Be professional and friendly.
+        5. DO NOT mention internal database structures or JSON formats.
         """
         
         return await self.llm.generate_response(system_prompt, message)
 
-    def _classify_intent(self, message: str) -> str:
-        msg = message.lower()
-        personal_keywords = ["my", "i", "me", "have", "mine"]
-        data_keywords = ["salary", "pay", "payroll", "leave", "balance", "days"]
-        
-        # If it asks about a specific person or "someone"
-        if any(word in msg for word in ["whose", "someone", "of bob", "of alice", "of charlie", "of david", "of eve"]) or any(char.isdigit() for char in msg):
-            return "global"
-            
-        # If it contains data keywords and personal pronouns
-        if any(word in msg for word in data_keywords) and any(word in msg for word in personal_keywords):
-            return "personal"
-            
-        # If it's just data keywords but no personal pronouns, could be policy (e.g., "what is leave policy")
-        if any(word in msg for word in data_keywords) and "policy" in msg:
-            return "policy"
-            
-        # Default to policy for general questions
-        return "policy"
+    def _find_employee_id(self, name: str) -> int:
+        if not name: return None
+        # Case-insensitive partial name match
+        emp = self.db.query(Employee).filter(Employee.name.ilike(f"%{name}%")).first()
+        return emp.id if emp else None
 
     def _get_personal_data(self, emp_id: int) -> str:
         emp = self.db.query(Employee).filter(Employee.id == emp_id).first()
-        if not emp:
-            return "Employee not found."
-            
+        if not emp: return "Employee not found."
+        
         leave = self.db.query(LeaveBalance).filter(LeaveBalance.employee_id == emp_id).first()
         payroll = self.db.query(Payroll).filter(Payroll.employee_id == emp_id).first()
         
-        data = {
-            "name": emp.name,
-            "role": emp.role,
-            "leave_balance": leave.days_remaining if leave else "N/A",
-            "salary": payroll.salary if payroll else "N/A"
-        }
-        return json.dumps(data)
-
-    def _extract_target_id(self, message: str) -> int:
-        msg = message.lower()
-        # Simple name mapping for the demo
-        names = {
-            "alice": 1,
-            "bob": 2,
-            "charlie": 3,
-            "david": 4,
-            "eve": 5
-        }
-        for name, id in names.items():
-            if name in msg:
-                return id
-                
-        # Fallback to digit extraction
-        import re
-        match = re.search(r'\d+', message)
-        return int(match.group()) if match else None
+        salary_str = f"${payroll.salary:,.2f}" if payroll else "N/A"
+        leave_str = f"{leave.days_remaining} days" if leave else "N/A"
+        
+        return f"""
+        Employee Profile:
+        - Name: {emp.name}
+        - Role: {emp.role}
+        - Leave Balance: {leave_str}
+        - Current Salary: {salary_str}
+        """
 

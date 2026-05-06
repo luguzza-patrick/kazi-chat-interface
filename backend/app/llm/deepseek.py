@@ -8,8 +8,6 @@ class DeepSeekProvider(LLMProvider):
         if api_key:
             api_key = api_key.strip("'\"")
             
-        print(f"DEBUG: API Key loaded, length: {len(api_key) if api_key else 0}")
-
         if not api_key or api_key == "your_key_here":
             # Cleaner mock response for testing
             return f"[MOCK] Kazi: I've processed your request. Based on the context provided, here is the answer to '{user_prompt}'."
