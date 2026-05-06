@@ -66,7 +66,7 @@ describe("<KaziChat />", () => {
     mockFetchOnce({ response: "" });
     render(<KaziChat />);
     expect(screen.getByRole("heading", { name: /kazi/i })).toBeInTheDocument();
-    expect(screen.getByLabelText(/message/i)).toBeInTheDocument();
+    expect(screen.getByLabelText("Message")).toBeInTheDocument();
     expect(screen.getByText(/your hr assistant/i)).toBeInTheDocument();
   });
 
@@ -75,7 +75,7 @@ describe("<KaziChat />", () => {
     const user = userEvent.setup();
     render(<KaziChat />);
 
-    await user.type(screen.getByLabelText(/message/i), "How many leave days?");
+    await user.type(screen.getByLabelText("Message"), "How many leave days?");
     await user.click(screen.getByRole("button", { name: /send message/i }));
 
     expect(await screen.findByTestId("msg-user")).toHaveTextContent(
@@ -97,7 +97,7 @@ describe("<KaziChat />", () => {
     const user = userEvent.setup();
     render(<KaziChat />);
 
-    await user.type(screen.getByLabelText(/message/i), "hello");
+    await user.type(screen.getByLabelText("Message"), "hello");
     await user.click(screen.getByRole("button", { name: /send message/i }));
 
     const err = await screen.findByTestId("error");
