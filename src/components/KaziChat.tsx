@@ -73,14 +73,14 @@ export async function sendChatMessage({
   return data.response;
 }
 
-function roleBadgeVariant(role: KaziUser["role"]) {
+function roleBadgeClass(role: KaziUser["role"]) {
   switch (role) {
     case "CEO":
-      return "kazi-ceo";
+      return "border-transparent bg-[oklch(0.45_0.12_265)] text-white";
     case "HR":
-      return "kazi-hr";
+      return "border-transparent bg-[oklch(0.55_0.12_220)] text-white";
     default:
-      return "kazi-employee";
+      return "border-transparent bg-secondary text-secondary-foreground";
   }
 }
 
@@ -230,7 +230,7 @@ export function KaziChat() {
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>Signed in as</span>
           <span className="font-medium text-foreground">{currentUser.name}</span>
-          <Badge variant={roleBadgeVariant(currentUser.role)}>
+          <Badge className={roleBadgeClass(currentUser.role)}>
             {currentUser.role}
           </Badge>
         </div>
