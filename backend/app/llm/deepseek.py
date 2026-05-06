@@ -8,9 +8,11 @@ class DeepSeekProvider(LLMProvider):
         if api_key:
             api_key = api_key.strip("'\"")
             
+        print(f"DEBUG: API Key loaded, length: {len(api_key) if api_key else 0}")
+
         if not api_key or api_key == "your_key_here":
-            # Mock response for development if no API key is provided
-            return f"Mock Response: I am Kazi, your HR assistant. System Prompt: {system_prompt} User Prompt: {user_prompt}"
+            # Cleaner mock response for testing
+            return f"[MOCK] Kazi: I've processed your request. Based on the context provided, here is the answer to '{user_prompt}'."
 
         async with httpx.AsyncClient() as client:
             response = await client.post(

@@ -50,14 +50,29 @@ class KaziAgent:
 
     def _classify_intent(self, message: str) -> str:
         msg = message.lower()
-        if any(word in msg for word in ["salary", "pay", "payroll", "leave", "balance", "days"]):
-            if any(word in msg for word in ["all", "everyone", "someone", "whose"]) or any(char.isdigit() for char in msg):
-                return "global"
+        personal_keywords = ["my", "i", "me", "have", "mine"]
+        data_keywords = ["salary", "pay", "payroll", "leave", "balance", "days"]
+        
+        # If it asks about a specific person or "someone"
+        if any(word in msg for word in ["whose", "someone", "of bob", "of alice", "of charlie", "of david", "of eve"]) or any(char.isdigit() for char in msg):
+            return "global"
+            
+        # If it contains data keywords and personal pronouns
+        if any(word in msg for word in data_keywords) and any(word in msg for word in personal_keywords):
             return "personal"
+            
+        # If it's just data keywords but no personal pronouns, could be policy (e.g., "what is leave policy")
+        if any(word in msg for word in data_keywords) and "policy" in msg:
+            return "policy"
+            
+        # Default to policy for general questions
         return "policy"
 
     def _get_personal_data(self, emp_id: int) -> str:
         emp = self.db.query(Employee).filter(Employee.id == emp_id).first()
+        if not emp:
+            return "Employee not found."
+            
         leave = self.db.query(LeaveBalance).filter(LeaveBalance.employee_id == emp_id).first()
         payroll = self.db.query(Payroll).filter(Payroll.employee_id == emp_id).first()
         
@@ -70,7 +85,20 @@ class KaziAgent:
         return json.dumps(data)
 
     def _extract_target_id(self, message: str) -> int:
-        # Placeholder: Extract first digit found in message as ID
+        msg = message.lower()
+        # Simple name mapping for the demo
+        names = {
+            "alice": 1,
+            "bob": 2,
+            "charlie": 3,
+            "david": 4,
+            "eve": 5
+        }
+        for name, id in names.items():
+            if name in msg:
+                return id
+                
+        # Fallback to digit extraction
         import re
         match = re.search(r'\d+', message)
         return int(match.group()) if match else None
