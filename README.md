@@ -12,7 +12,10 @@ A production-structured HR AI agent with a FastAPI backend and a React frontend.
 - Python 3.12+ (managed by `uv`)
 - Node.js & npm
 
-### 2. Setup
+### 2. Authentication
+Access the system using the test credentials found in [credentials.txt](credentials.txt). The dropdown for user switching has been replaced by a login system for enhanced security and realistic simulation.
+
+### 3. Setup
 ```bash
 # Setup backend
 cd backend

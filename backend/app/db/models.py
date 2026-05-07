@@ -7,6 +7,8 @@ class Employee(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
+    email = Column(String, unique=True, index=True)
+    username = Column(String, unique=True, index=True)
     role = Column(String)  # employee, hr, ceo
 
     leave_balances = relationship("LeaveBalance", back_populates="employee", uselist=False)

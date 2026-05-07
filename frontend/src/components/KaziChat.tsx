@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Send, Settings, Loader2, Sparkles, AlertCircle } from "lucide-react";
+import { Send, Settings, Loader2, Sparkles, AlertCircle, LogOut } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { Login } from "./Login";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -32,13 +35,7 @@ export interface KaziUser {
   role: "Employee" | "HR" | "CEO";
 }
 
-export const KAZI_USERS: KaziUser[] = [
-  { id: "1", name: "Alice Johnson", role: "Employee" },
-  { id: "2", name: "Bob Smith", role: "Employee" },
-  { id: "3", name: "Charlie Brown", role: "Employee" },
-  { id: "4", name: "David HR", role: "HR" },
-  { id: "5", name: "Eve CEO", role: "CEO" },
-];
+export const STORAGE_USER_KEY = "kazi:user";
 
 const DEFAULT_BACKEND_URL =
   (import.meta.env.VITE_KAZI_BACKEND_URL as string | undefined) ??
@@ -86,7 +83,7 @@ function roleBadgeClass(role: KaziUser["role"]) {
 }
 
 export function KaziChat() {
-  const [userId, setUserId] = useState<string>(KAZI_USERS[0].id);
+  const [user, setUser] = useState<any>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "welcome",
@@ -101,12 +98,15 @@ export function KaziChat() {
   const [backendUrl, setBackendUrl] = useState<string>(DEFAULT_BACKEND_URL);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const currentUser = KAZI_USERS.find((u) => u.id === userId) ?? KAZI_USERS[0];
+
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (saved) setBackendUrl(saved);
+    const savedUrl = window.localStorage.getItem(STORAGE_KEY);
+    if (savedUrl) setBackendUrl(savedUrl);
+    
+    const savedUser = window.localStorage.getItem(STORAGE_USER_KEY);
+    if (savedUser) setUser(JSON.parse(savedUser));
   }, []);
 
   useEffect(() => {
@@ -114,6 +114,20 @@ export function KaziChat() {
     if (!el || typeof el.scrollTo !== "function") return;
     el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messages, loading]);
+
+  const handleLogin = (authenticatedUser: any) => {
+    setUser(authenticatedUser);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(authenticatedUser));
+    }
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(STORAGE_USER_KEY);
+    }
+  };
 
   const persistUrl = (url: string) => {
     setBackendUrl(url);
@@ -140,7 +154,7 @@ export function KaziChat() {
     try {
       const response = await sendChatMessage({
         url: backendUrl,
-        userId,
+        userId: user.id.toString(),
         message: text,
       });
       setMessages((m) => [
@@ -154,6 +168,10 @@ export function KaziChat() {
     } finally {
       setLoading(false);
     }
+  }
+
+  if (!user) {
+    return <Login onLogin={handleLogin} />;
   }
 
   return (
@@ -171,23 +189,15 @@ export function KaziChat() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Select value={userId} onValueChange={setUserId}>
-            <SelectTrigger className="h-9 w-[170px]" aria-label="Select user">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {KAZI_USERS.map((u) => (
-                <SelectItem key={u.id} value={u.id}>
-                  <span className="flex items-center gap-2">
-                    <span>{u.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      · {u.role}
-                    </span>
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLogout}
+            className="text-muted-foreground hover:text-foreground gap-2 h-9"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="hidden sm:inline">Sign Out</span>
+          </Button>
 
           <Popover>
             <PopoverTrigger asChild>
@@ -229,9 +239,9 @@ export function KaziChat() {
       <div className="flex items-center justify-between border-b border-border bg-muted/40 px-5 py-2">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>Signed in as</span>
-          <span className="font-medium text-foreground">{currentUser.name}</span>
-          <Badge className={roleBadgeClass(currentUser.role)}>
-            {currentUser.role}
+          <span className="font-medium text-foreground">{user.name}</span>
+          <Badge className={roleBadgeClass(user.role.toUpperCase() as any)}>
+            {user.role}
           </Badge>
         </div>
       </div>
@@ -260,7 +270,11 @@ export function KaziChat() {
                     : "rounded-bl-sm bg-card text-card-foreground border border-border",
                 )}
               >
-                {m.content}
+                <div className="markdown-content">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {m.content}
+                  </ReactMarkdown>
+                </div>
               </div>
             </li>
           ))}
@@ -297,7 +311,7 @@ export function KaziChat() {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={`Message Kazi as ${currentUser.role}…`}
+            placeholder={`Message Kazi as ${user.role}…`}
             aria-label="Message"
             disabled={loading}
             className="h-11"
