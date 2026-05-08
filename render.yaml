@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: kazi-chat-interface
+    runtime: docker
+    plan: starter
+    dockerfile: ./Dockerfile
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: DEV_MODE
+        value: "false"
+      - key: STATIC_DIR
+        value: static
+      - key: LLM_MODEL
+        value: deepseek-chat
+      - key: DEEPSEEK_BASE_URL
+        value: https://api.deepseek.com/v1
+      - key: DEEPSEEK_API_KEY
+        sync: false  # Don't sync from environment
+      - key: DATABASE_URL
+        sync: false  # Don't sync from environment
+
+  - type: pgsql
+    name: kazi-postgres
+    ipAllowList: []
+    postgresMajorVersion: 16
