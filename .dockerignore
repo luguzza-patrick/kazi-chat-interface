@@ -26,8 +26,6 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 backend/data/faiss_index
-backend/data/pdfs/*.pdf
-!backend/data/pdfs/Employment Policy.pdf
 
 # Node
 **/node_modules/
