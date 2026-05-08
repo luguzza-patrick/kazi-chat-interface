@@ -23,7 +23,7 @@ services:
       - key: DATABASE_URL
         sync: false  # Don't sync from environment
 
-  - type: pgsql
+  - type: postgres
     name: kazi-postgres
     ipAllowList: []
     postgresMajorVersion: 16
