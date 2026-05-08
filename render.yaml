@@ -23,7 +23,8 @@ services:
         value: "1"
       - key: STATIC_DIR
         value: static
-      - key: EMBEDDING_MODEL
+      - key: FORCE_INGEST
+        value: "false"  # Set to "true" to force re-ingestion of documents on startup
         value: sentence-transformers/all-MiniLM-L6-v2
       - key: FAISS_INDEX_PATH
         value: data/faiss_index
