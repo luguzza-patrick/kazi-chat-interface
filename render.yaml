@@ -2,28 +2,34 @@ services:
   - type: web
     name: kazi-chat-interface
     runtime: docker
-    plan: starter
-    dockerfile: ./Dockerfile
-    dockerfilePath: ./Dockerfile
+    plan: free
     envVars:
-      - key: PORT
-        value: 8080
-      - key: PYTHONUNBUFFERED
-        value: "1"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: kazi-postgres
+          property: connectionString
+      # LLM Configuration
+      # Priority: DEEPSEEK_BASE_URL (if set to local endpoint) > DEEPSEEK_API_KEY (cloud API)
+      - key: DEEPSEEK_BASE_URL
+        value: http://165.245.129.58:8000/v1  # Local model endpoint (has priority)
+      - key: DEEPSEEK_API_KEY
+        sync: false  # Set in Render dashboard if using cloud API instead of local endpoint
+      - key: LLM_MODEL
+        value: Qwen/Qwen2.5-1.5B-Instruct
+      # Other settings
       - key: DEV_MODE
         value: "false"
+      - key: PYTHONUNBUFFERED
+        value: "1"
       - key: STATIC_DIR
         value: static
-      - key: LLM_MODEL
-        value: deepseek-chat
-      - key: DEEPSEEK_BASE_URL
-        value: https://api.deepseek.com/v1
-      - key: DEEPSEEK_API_KEY
-        sync: false  # Don't sync from environment
-      - key: DATABASE_URL
-        sync: false  # Don't sync from environment
+      - key: EMBEDDING_MODEL
+        value: sentence-transformers/all-MiniLM-L6-v2
+      - key: FAISS_INDEX_PATH
+        value: data/faiss_index
+      - key: PDF_DATA_PATH
+        value: data/pdfs
 
-  - type: postgres
-    name: kazi-postgres
-    ipAllowList: []
-    postgresMajorVersion: 16
+databases:
+  - name: kazi-postgres
+    plan: free
