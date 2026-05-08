@@ -37,12 +37,12 @@ class RAGEngine:
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
         chunks = text_splitter.split_text(text)
 
-        embeddings = list(self.model.embed(chunks))
+        embeddings = np.array(list(self.model.embed(chunks))).astype('float32')
         
         if self.index is None:
             self.index = faiss.IndexFlatL2(embeddings.shape[1])
         
-        self.index.add(np.array(embeddings).astype('float32'))
+        self.index.add(embeddings)
         self.documents.extend(chunks)
 
         self.save_index()
