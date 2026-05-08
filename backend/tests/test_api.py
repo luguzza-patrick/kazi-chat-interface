@@ -6,11 +6,61 @@ from app.db.models import Employee, LeaveBalance, Payroll
 
 client = TestClient(app)
 
-@pytest.fixture(scope="module", autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def setup_db():
-    # Use existing seeded DB for simplicity in this demo, 
-    # but ideally use a separate test DB.
+    """Create tables and seed test data before running tests"""
+    # Create all tables
+    Base.metadata.create_all(bind=engine)
+    
+    db = SessionLocal()
+    try:
+        # Check if employees already exist
+        existing = db.query(Employee).first()
+        if existing:
+            return  # Database already seeded
+        
+        # Seed test employees (IDs 1-5)
+        employees = [
+            Employee(id=1, name="Alice Johnson", email="alice@kazi.com", username="alice", role="Employee"),
+            Employee(id=2, name="Bob Smith", email="bob@kazi.com", username="bob", role="Employee"),
+            Employee(id=3, name="Charlie Brown", email="charlie@kazi.com", username="charlie", role="Employee"),
+            Employee(id=4, name="David HR", email="david@kazi.com", username="david", role="HR"),
+            Employee(id=5, name="Eve CEO", email="eve@kazi.com", username="eve", role="CEO"),
+        ]
+        
+        for emp in employees:
+            db.add(emp)
+        
+        # Add leave balances
+        leave_balances = [
+            LeaveBalance(employee_id=1, days_remaining=15),
+            LeaveBalance(employee_id=2, days_remaining=20),
+            LeaveBalance(employee_id=3, days_remaining=10),
+            LeaveBalance(employee_id=4, days_remaining=22),
+            LeaveBalance(employee_id=5, days_remaining=30),
+        ]
+        
+        for lb in leave_balances:
+            db.add(lb)
+        
+        # Add payroll
+        payroll = [
+            Payroll(employee_id=1, salary=55000),
+            Payroll(employee_id=2, salary=48000),
+            Payroll(employee_id=3, salary=60000),
+            Payroll(employee_id=4, salary=65000),
+            Payroll(employee_id=5, salary=150000),
+        ]
+        
+        for p in payroll:
+            db.add(p)
+        
+        db.commit()
+    finally:
+        db.close()
+    
     yield
+
 
 def test_chat_policy():
     response = client.post("/api/v1/chat", json={
