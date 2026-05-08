@@ -17,16 +17,18 @@ class RBACEngine:
         self.G.add_edge("hr", "employee")
 
     def can_access(self, requester_id: int, requester_role: str, target_id: int) -> bool:
+        role = requester_role.lower() if requester_role else ""
+        
         # Rule 1: Anyone can access their own data
         if requester_id == target_id:
             return True
 
         # Rule 2: HR and CEO can access all employee data
-        if requester_role in ["hr", "ceo"]:
+        if role in ["hr", "ceo"]:
             return True
 
         # Rule 3: CEO can access HR data
-        if requester_role == "ceo":
+        if role == "ceo":
             return True
 
         return False

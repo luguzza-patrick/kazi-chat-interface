@@ -1,6 +1,32 @@
 # Kazi HR AI Agent
 
-A production-structured HR AI agent with a FastAPI backend and a React frontend.
+Kazi is an AI-powered HR assistant designed to help employees and HR teams with policy information, leave management, payroll queries, and more.
+
+## Deployment to Render (Single Container)
+
+This project is configured for single-container deployment on Render.
+
+### Prerequisites
+
+1. A [Render](https://render.com) account.
+2. A DeepSeek API Key (or a compatible OpenAI-style API endpoint).
+
+### Steps
+
+1. **Create a New Web Service**:
+   - Choose **Deploy an existing image** or **Connect your GitHub repository**.
+   - If connecting via GitHub, Render will automatically detect the `Dockerfile`.
+
+2. **Configure Environment Variables**:
+   Add the following variables in the Render dashboard:
+   - `DEEPSEEK_API_KEY`: Your API key.
+   - `DEEPSEEK_BASE_URL`: (Optional) Defaults to `https://api.deepseek.com/v1`. Change this if using a custom model endpoint.
+   - `LLM_MODEL`: (Optional) Defaults to `deepseek-chat`.
+   - `DATABASE_URL`: (Optional) Defaults to `sqlite:///./kazi.db`. For production, use a Render Managed PostgreSQL instance.
+   - `PORT`: `8000` (Render sets this automatically, but ensure it matches).
+
+3. **Deploy**:
+   - Render will build the multi-stage Dockerfile (Frontend build + Backend setup) and serve everything on port 8000.
 
 ## Project Structure
 - `backend/`: FastAPI server, PostgreSQL/SQLite DB, FAISS vector store.

@@ -2,14 +2,15 @@ import os
 import faiss
 import numpy as np
 from typing import List, Dict
-from sentence_transformers import SentenceTransformer
+from starlette.concurrency import run_in_threadpool
+from fastembed import TextEmbedding
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from pypdf import PdfReader
 from app.core.config import settings
 
 class RAGEngine:
     def __init__(self):
-        self.model = SentenceTransformer(settings.EMBEDDING_MODEL)
+        self.model = TextEmbedding(model_name=settings.EMBEDDING_MODEL)
         self.index = None
         self.documents = []
         self._load_index()
@@ -36,7 +37,7 @@ class RAGEngine:
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
         chunks = text_splitter.split_text(text)
 
-        embeddings = self.model.encode(chunks)
+        embeddings = list(self.model.embed(chunks))
         
         if self.index is None:
             self.index = faiss.IndexFlatL2(embeddings.shape[1])
@@ -54,12 +55,15 @@ class RAGEngine:
         with open(os.path.join(settings.FAISS_INDEX_PATH, "docs.json"), "w") as f:
             json.dump(self.documents, f)
 
-    def retrieve(self, query: str, k: int = 3) -> List[str]:
+    async def retrieve(self, query: str, k: int = 3) -> List[str]:
         if self.index is None:
             return []
         
-        query_vector = self.model.encode([query])
-        distances, indices = self.index.search(np.array(query_vector).astype('float32'), k)
+        # Run heavy embedding and search in a thread pool to avoid blocking the event loop
+        query_vector = await run_in_threadpool(lambda: list(self.model.embed([query]))[0])
+        distances, indices = await run_in_threadpool(
+            lambda: self.index.search(np.array([query_vector]).astype('float32'), k)
+        )
         
         results = []
         for idx in indices[0]:

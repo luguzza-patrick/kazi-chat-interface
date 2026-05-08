@@ -8,16 +8,23 @@ class DeepSeekProvider(LLMProvider):
         if api_key:
             api_key = api_key.strip("'\"")
             
-        if not api_key or api_key == "your_key_here":
-            # Cleaner mock response for testing
+        # If no API key and not using the default DeepSeek URL, assume it's a local/unauthenticated endpoint
+        is_custom_url = settings.DEEPSEEK_BASE_URL != "https://api.deepseek.com/v1"
+        
+        if not api_key and not is_custom_url:
+            # Cleaner mock response for testing if no key and using default URL
             return f"[MOCK] Kazi: I've processed your request. Based on the context provided, here is the answer to '{user_prompt}'."
+
+        headers = {}
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 f"{settings.DEEPSEEK_BASE_URL}/chat/completions",
-                headers={"Authorization": f"Bearer {api_key}"},
+                headers=headers,
                 json={
-                    "model": "deepseek-chat",
+                    "model": settings.LLM_MODEL,
                     "messages": [
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_prompt}

@@ -39,7 +39,7 @@ export const STORAGE_USER_KEY = "kazi:user";
 
 const DEFAULT_BACKEND_URL =
   (import.meta.env.VITE_KAZI_BACKEND_URL as string | undefined) ??
-  "http://localhost:8000/api/v1/chat";
+  "/api/v1/chat";
 
 const STORAGE_KEY = "kazi:backend-url";
 
